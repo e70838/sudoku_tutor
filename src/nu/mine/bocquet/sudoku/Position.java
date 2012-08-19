@@ -13,6 +13,7 @@ public final class Position {
 	public int L() { return this.line; }
 	public int C() { return this.column; }
 	public int Z() { return this.zone; }
+	public int[] CLZ() { return new int[]{this.column, 9+this.line, 18+this.zone}; }
 	public Position (int index) {
 		assert index >= 0;
 		assert index < 81;

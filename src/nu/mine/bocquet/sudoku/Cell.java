@@ -5,6 +5,7 @@ public class Cell {
 	private boolean [] m_isCandidate;
 	private Position position;
 	public boolean isCandidate(int digit) { return this.m_isCandidate[digit]; }
+	public boolean isSolved() { return this.m_candidate.length == 1; }
 	public int [] candidates() { return this.m_candidate; }
 	public Cell (int [] candidates, Position position) {
 		this.position = position;

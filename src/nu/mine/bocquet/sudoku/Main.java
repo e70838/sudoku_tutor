@@ -1,11 +1,5 @@
 package nu.mine.bocquet.sudoku;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
-
 /**
  * 
  */
@@ -18,16 +12,7 @@ public class Main {
 
 	public static void setup(Sudoku s, String l1, String l2, String l3, String l4, String l5,
 			String l6, String l7, String l8, String l9) {
-		String [] lines = new String[9];
-		lines[0] = l1;
-		lines[1] = l2;
-		lines[2] = l3;
-		lines[3] = l4;
-		lines[4] = l5;
-		lines[5] = l6;
-		lines[6] = l7;
-		lines[7] = l8;
-		lines[8] = l9;
+		String [] lines = new String[]{l1, l2, l3, l4, l5, l6, l7, l8, l9};
 		for (int l = 0; l < lines.length; l++) {
 			String line = lines[l];
 			for (int col = 0; col < line.length(); col++) {
@@ -44,23 +29,24 @@ public class Main {
 			}
 		}
 	}
-	public static void main2(String[] args) {
-		Display display = new Display();
-		Shell shell = new Shell(display);
-		FillLayout fillLayout = new FillLayout();
-		shell.setLayout(fillLayout);
-		Button btn = new Button(shell, SWT.PUSH);
-		btn.setText("Hello");
-		shell.pack();
-		shell.open();
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch()) {
-				display.sleep();
+	public static void main0 (String[] args) {
+		Integer [] a = {0, 1, 2, 3, 4, 5};
+		Perm<Integer> permutations = new Perm<Integer>(a, 2, a.length -2);
+		for (Pair<Integer[]> pair : permutations) {
+			Integer[] p = pair.first;
+			Integer[] q = pair.second;
+			System.out.print ("Iteration: ");
+			for (Integer c : p) {
+				System.out.print (c + " ");
 			}
+			System.out.print (" - ");
+			for (Integer c : q) {
+				System.out.print (c + " ");
+			}
+			System.out.println();
 		}
-		display.dispose();
 	}
-	
+
 	/**
 	 * @param args
 	 */
@@ -107,7 +93,7 @@ public class Main {
 //				".7.1.8.3.",
 //				"9.......4");
 // 		s.removeCandidate(4, 4, 4);
-// 		setup(s,  // 7-8 n°45 6juil/6août
+// 		setup(s,  // 7-8 nï¿½45 6juil/6aoï¿½t
 //				".....3.2.",
 //				"..5...7..",
 //				".4..1....",
@@ -117,7 +103,7 @@ public class Main {
 //				"..8..6...",
 //				"1..7..9..",
 //				".2.....3.");
-// 		setup(s,  // 7-8 n°15 6juil/6août
+// 		setup(s,  // 7-8 nï¿½15 6juil/6aoï¿½t
 //				".6..4..2.",
 //				".1..7.3..",
 //				"9.....5..",
@@ -127,16 +113,36 @@ public class Main {
 //				"6.....4..",
 //				"..7..9...",
 //				"...1..8.."); 		
- 		setup(s,  // n°48
+ 		setup(s,  // nï¿½48
 				"...8..5..",
 				".3..4...6",
 				"....1.2..",
 				".4..3....",
 				"6......7.",
 				"..8..9...",
-				"2....6.1.",
-				".9...2.4.",
+				"2...6..1.",
+				".9..2..4.",
 				".5.7..8.."); 		
+// 		setup(s,  // nï¿½49
+//				".8..2.5..",
+//				".7..9..6.",
+//				"..3..4...",
+//				".6.....9.",
+//				"..1..8...",
+//				"4..5...7.",
+//				"...1...8.",
+//				".2.6..3..",
+//				"5...7...."); 		
+// 		setup(s,  // nï¿½50
+//				"....3....",
+//				"1..7..6..",
+//				".4...9...",
+//				"..5.6....",
+//				"2.8...1.4",
+//				"7..2...9.",
+//				"9....1.2.",
+//				".3.5.....",
+//				"..6....7."); 		
  		System.out.println ("**** Nb of solutions: " + s.nbSolutions());
  		
  		Hint h;

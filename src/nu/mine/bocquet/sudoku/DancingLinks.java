@@ -9,7 +9,6 @@ public class DancingLinks {
 	int [] O; // the list of rows of the solution
 	int lastCell;
 	
-        // Todo: nbCells could be optional or not exist
 	public DancingLinks (int nbColumns, int nbCells) {
 		int maxNbCells = nbColumns + nbCells + 1;
 		this.nbColumns = nbColumns;
@@ -37,7 +36,6 @@ public class DancingLinks {
 		for (int v : c) {
 			assert v > 0;
 			assert v <= this.nbColumns;
-			// Todo: if this.lastCell == this.R.size -> on agrandit tout
 			int newCell = this.lastCell++;
 			if (prev == 0) {
 				L[newCell] = R[newCell] = newCell;
@@ -112,12 +110,12 @@ public class DancingLinks {
     	for (int cc = R[c]; cc != 0; cc = R[cc]) {
     		if (S[cc] < S[c]) {
     			c = cc;
-    			if (S[c] == 1) {
-    				break;
-    			}
+    			//if (S[c] == 1) {
+    			//	break;
+    			//}
     		}
     	}
-    	assert S[c] > 0;
+    	// assert S[c] > 0; TODO
     	assert c <= this.nbColumns;
     	// System.out.println ("Exploring column " + c);
     	coverColumn(c);

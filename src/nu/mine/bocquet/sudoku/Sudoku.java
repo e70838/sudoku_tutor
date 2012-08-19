@@ -8,8 +8,9 @@ public class Sudoku {
 	private Area[] columns;
 	private Area[] lines;
 	private Area[] zones;
+	private Area[] allAreas;
 	public Cell[] grille;
-	public void dump(PrintStream os) {
+	public void dump(PrintStream os) { // Affichage de la grille
 		for (int i = 0; i < 81; i++) {
 			Cell c = grille[i];
 			for (int digit : c.candidates()) {
@@ -21,13 +22,13 @@ public class Sudoku {
 				os.print (' ');
 			}
 		}
-	}
-	private boolean hint1Check(Hint h, Cell cell, int digit, Area area, String name) {
+	} // check that a known digit does not remain candidate in one of its area (name is either column line or zone
+	private boolean hint1Check(Hint h, Cell cell, int digit, Area area) {
 		Set<Cell> s = area.cells(digit);
 		for (Cell c : s) {
 			if (c != cell) {
 				if (h.position.size() == 0) {
-					h.hints.add("A digit can be present only once in a " + name);
+					h.hints.add("A digit can be present only once in a " + area.getKind());
 					h.hints.add("The digit " + digit + " is present in cell " + cell.getPosition());
 				}
 				h.position.add(c.getPosition());
@@ -36,89 +37,93 @@ public class Sudoku {
 			}
 		}
 		return h.position.size() != 0;
-	}
-	private boolean hint2Check (Hint h, Area[] areas, String name) {
-		for (int i = 0; i < 9; i++) {
-			for (int digit = 1; digit <= 9; digit++) {
-				Set<Cell> s = areas[i].cells(digit);
-				if (s.size() == 1) {
-					Cell c = s.iterator().next();
-					int [] candidates = c.candidates();
-					if (candidates.length != 1) {
-						h.hints.add("Check digits that have only one candidate in a " + name);
-						h.hints.add("Digit " + digit + " in " + name + ' ' + (i + 1));
-						for (int d : candidates) {
-							if (d != digit) {
-								h.digit.add(d);
-								h.position.add(c.getPosition());
-							}
+	} // if a digit can only be in one cell of an area, it is found an others candidates shall be removed from the cell
+	private boolean hint2Check (Hint h, Area a) {
+		for (int digit = 1; digit <= 9; digit++) {
+			Set<Cell> s = a.cells(digit);
+			if (s.size() == 1) {
+				Cell c = s.iterator().next();
+				int [] candidates = c.candidates();
+				if (candidates.length != 1) {
+					h.hints.add("Check digits that have only one candidate in a " + a.getKind());
+					h.hints.add("Digit " + digit + " in " + a.getKind() + ' ' + (a.getNumber() + 1));
+					for (int d : candidates) {
+						if (d != digit) {
+							h.digit.add(d);
+							h.position.add(c.getPosition());
 						}
-						return true;
 					}
+					return true;
 				}
 			}
 		}
 		return false;
 	}
-	private boolean hint3Check (Hint h, Area[] areas, String name) {
-		for (int i = 0; i < 9; i++) {
-			Area a = areas[i];
-			for (int d1 = 1; d1 <= 9; d1++) {
-				if (a.cells(d1).size() == 2) {
-					Cell[] s1 = a.cells(d1).toArray(new Cell[0]);
-					for (int d2 = d1 + 1; d2 <= 9; d2++) {
-						Set<Cell> s2 = a.cells(d2);
-						if (s2.size() == 2 && s2.contains(s1[0]) && s2.contains(s1[1])) {
-							for (Cell c : s1) {
-								int[] candidates = c.candidates();
-								if (candidates.length > 2) {
-									for (int d3 : candidates) {
-										if ((d3 == d1) || (d3 == d2)) {
-											continue;
-										}
-										h.position.add(c.getPosition());
-										h.digit.add(d3);
-										if (h.hints.size() == 0) {
-											h.hints.add("Hidden pair: when 2 digits can be in only 2 cells of a " + name + ", these cells can not have other candidates");
-											h.hints.add("in " + name + ' ' + (i + 1));
-											h.hints.add("digit " + d1 + " and digit " + d2);
-										}
-										h.hints.add("excludes candidate " + d3 + " in cell " + h.position);
 
-									}
-								}
-							}
-							if (h.hints.size() != 0) { return true; }
-						}
-					}
-				}
-			}
-		}
-		return false;
-	}
 	public Hint hint() {
 		// level 1
 		Hint h = new Hint();
 		h.level = 1; // if a digit is known, it shall be removed from the candidates of its line, column and zone
 		for (int i = 0; i < 81; i++) {
 			Cell cell = grille[i];
-			if (cell.candidates().length == 1) {
+			if (cell.isSolved()) {
 				int digit = cell.candidates()[0];
 				Position p = cell.getPosition();
-				if (hint1Check (h, cell, digit, columns[p.C()], "column")) { return h; }
-				if (hint1Check (h, cell, digit, lines[p.L()], "line")) { return h; }
-				if (hint1Check (h, cell, digit, zones[p.Z()], "zone")) { return h; }
+				for (int a : p.CLZ()) {
+					if (hint1Check (h, cell, digit, allAreas[a])) { return h; }
+				}
 			}
 		}
 		h.level = 2; // if a digit exists only once in a line, column or zone, remove others candidates
-		if (hint2Check (h, columns, "column")) { return h; }
-		if (hint2Check (h, lines, "line")) { return h; }
-		if (hint2Check (h, zones, "zone")) { return h; }
-		h.level = 3; // hidden pairs
-		if (hint3Check (h, columns, "column")) { return h; }
-		if (hint3Check (h, lines, "line")) { return h; }
-		if (hint3Check (h, zones, "zone")) { return h; }
-		
+		for (Area a : this.allAreas) {
+			if (hint2Check (h, a)) { return h; }
+		}
+		h.level = 3; // naked any (this includes hidden pairs or naked pairs)
+		for (Area a : this.allAreas) {
+			Cell[] cs = a.unsolvedCells();
+			if (cs.length < 3) {
+				continue;
+			}
+			Perm<Cell> permutations = new Perm<Cell>(cs, 2, cs.length -1);
+			for (Pair<Cell[]> pair : permutations) {
+				Cell[] p = pair.first;
+				boolean[] digits = new boolean[]{false, false, false, false, false, false, false, false, false, false};
+				for (Cell c : p) {
+					for (int d : c.candidates()) {
+						digits[d] = true;
+					}
+				}
+				int nbDigits = 0;
+				for (boolean b : digits) {
+					if (b) nbDigits++;
+				}
+				assert nbDigits >= p.length;
+				if (nbDigits == p.length) {
+					boolean digitToRemoveFound = false;
+					for (Cell c : pair.second) {
+						for (int d = 1; d <= 9; d++) {
+							if (digits[d] && c.isCandidate(d)) {
+								h.position.add(c.getPosition());
+								h.digit.add(d);
+								digitToRemoveFound = true;
+							}
+						}
+					}
+					if (digitToRemoveFound) {
+						h.hints.add("Naked nuplet of size " + p.length);
+						h.hints.add("Found in " + a.name());
+						StringBuffer s = new StringBuffer("with digits");
+						for (int d = 1; d <= 9; d++) {
+							if (digits[d]) {
+								s.append(' ').append(d);
+							}
+						}
+						h.hints.add(s.toString());
+						return h;
+					}
+				}
+			}
+		}		
 		h.level = 5; // advanced hatching
 		for (int digit = 1; digit <= 9; digit++) {
 			for (int col = 0; col < 9; col++) {
@@ -382,9 +387,9 @@ public class Sudoku {
 		Cell c = grille[p.I()];
 		for (int d = 1; d <= 9; d++) {
 			if (d != digit) {
-				this.columns[p.C()].remove(d, c);
-				this.lines[p.L()].remove(d, c);
-				this.zones[p.Z()].remove(d, c);
+				for (int a : p.CLZ()) {
+					this.allAreas[a].remove(d, c);
+				}
 				c.removeCandidate(d);
 			}
 		}
@@ -416,10 +421,11 @@ public class Sudoku {
 		columns = new Area[9];
 		lines = new Area[9];
 		zones = new Area[9];
+		allAreas = new Area[27];
 		for (int i = 0; i < 9; i++) {
-			columns[i] = new Area();
-			lines[i] = new Area();
-			zones[i] = new Area();
+			allAreas[i]    = columns[i] = new Area(i, "column");
+			allAreas[i+9]  = lines[i] = new Area(i, "line");
+			allAreas[i+18] = zones[i] = new Area(i, "zone");
 		}
 		for (int i = 0; i < 81; i++) {
 			int candidates[] = new int[9];
@@ -520,7 +526,7 @@ public class Sudoku {
 			int c1 = 81 + c * 9 + digit;
 			int c2 = 81 + 81 + l * 9 + digit;
 			int c3 = 81 + 81 + 81 + z * 9 + digit;
-			int cellNum = this.nbColumns * (1 + c0) + digit;
+			int cellNum = 1 + (l+1)*this.nbColumns + c*36 + (digit-1)*4;
 			assert this.C[cellNum] == c0;
 			assert this.C[cellNum + 1] == c1;
 			assert this.C[cellNum + 2] == c2;
